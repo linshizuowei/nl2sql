@@ -1,0 +1,10 @@
+{"agg": [0], "cond_conn_op": 2, "sel": [1], "conds": [[3, 0, "11"], [6, 0, "11"]]}
+{"agg": [0], "cond_conn_op": 2, "sel": [1], "conds": [[3, 0, "11"], [6, 0, "11"]]}
+{"agg": [0], "cond_conn_op": 2, "sel": [1], "conds": [[6, 0, "11"], [3, 0, "11"]]}
+{"agg": [0], "cond_conn_op": 0, "sel": [1], "conds": [[2, 0, "5"]]}
+{"agg": [0], "cond_conn_op": 0, "sel": [1], "conds": [[0, 0, "百"]]}
+{"agg": [0], "cond_conn_op": 0, "sel": [1], "conds": [[2, 1, "5"]]}
+{"agg": [0], "cond_conn_op": 2, "sel": [11], "conds": [[1, 0, "10"], [13, 0, "10"]]}
+{"agg": [0], "cond_conn_op": 2, "sel": [11], "conds": [[1, 0, "20"], [11, 0, "20"]]}
+{"agg": [0], "cond_conn_op": 2, "sel": [0], "conds": [[1, 1, "20"], [11, 1, "20"]]}
+{"agg": [0], "cond_conn_op": 1, "sel": [0], "conds": [[0, 2, "金融街"]]}

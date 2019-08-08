@@ -1,0 +1,65 @@
+prepare data done. cost 5.41063189507 s
+=====> train start
+=====>epoch: 1  batch: 1000  train loss: 7.02402726698  val loss: 5.84693145752
+=====>epoch: 2  batch: 1000  train loss: 6.718183815  val loss: 5.37926292419
+=====>epoch: 3  batch: 1000  train loss: 6.47241313171  val loss: 4.89848089218
+=====>epoch: 4  batch: 1000  train loss: 6.39163956547  val loss: 4.8176317215
+=====>epoch: 5  batch: 1000  train loss: 6.35490663195  val loss: 4.96986198425
+=====>epoch: 6  batch: 1000  train loss: 6.33090905142  val loss: 4.90901756287
+=====>epoch: 7  batch: 1000  train loss: 6.32441184998  val loss: 4.89461660385
+=====>epoch: 8  batch: 1000  train loss: 6.30462969589  val loss: 4.9357085228
+=====>epoch: 9  batch: 1000  train loss: 6.2913904829  val loss: 4.99250793457
+=====>epoch: 10  batch: 1000  train loss: 6.28977633715  val loss: 4.74375343323
+=====>epoch: 11  batch: 1000  train loss: 6.28446826172  val loss: 4.95489692688
+=====>epoch: 12  batch: 1000  train loss: 6.27504876471  val loss: 4.91601133347
+=====>epoch: 13  batch: 1000  train loss: 6.27904599953  val loss: 4.96278238297
+=====>epoch: 14  batch: 1000  train loss: 6.26620972729  val loss: 4.93613100052
+=====>epoch: 15  batch: 1000  train loss: 6.25609863234  val loss: 4.78436946869
+=====>epoch: 16  batch: 1000  train loss: 6.26148906374  val loss: 4.87070655823
+=====>epoch: 17  batch: 1000  train loss: 6.26520980644  val loss: 4.84431219101
+=====>epoch: 18  batch: 1000  train loss: 6.24679915428  val loss: 5.09425067902
+=====>epoch: 19  batch: 1000  train loss: 6.26168241024  val loss: 4.95865917206
+=====>epoch: 20  batch: 1000  train loss: 6.25596280384  val loss: 4.8507232666
+=====>epoch: 21  batch: 1000  train loss: 6.25069891167  val loss: 5.11889123917
+=====>epoch: 22  batch: 1000  train loss: 6.25752254772  val loss: 4.76226377487
+=====>epoch: 23  batch: 1000  train loss: 6.25139018917  val loss: 4.75418281555
+=====>epoch: 24  batch: 1000  train loss: 6.2475677166  val loss: 4.91739988327
+=====>epoch: 25  batch: 1000  train loss: 6.25103430176  val loss: 4.88152694702
+=====>epoch: 26  batch: 1000  train loss: 6.25325705671  val loss: 4.95240068436
+=====>epoch: 27  batch: 1000  train loss: 6.24898788023  val loss: 4.88456678391
+=====>epoch: 28  batch: 1000  train loss: 6.2378376832  val loss: 4.78394651413
+=====>epoch: 29  batch: 1000  train loss: 6.24026196051  val loss: 4.88490581512
+=====>epoch: 30  batch: 1000  train loss: 6.24692300653  val loss: 4.92599630356
+=====>epoch: 31  batch: 1000  train loss: 6.23886848402  val loss: 4.77209854126
+=====>epoch: 32  batch: 1000  train loss: 6.22759215355  val loss: 4.77515554428
+=====>epoch: 33  batch: 1000  train loss: 6.23964715528  val loss: 4.92002820969
+=====>epoch: 34  batch: 1000  train loss: 6.22534273243  val loss: 4.86474275589
+=====>epoch: 35  batch: 1000  train loss: 6.23051536942  val loss: 4.92859125137
+=====>epoch: 36  batch: 1000  train loss: 6.24734598541  val loss: 4.62039327621
+=====>epoch: 37  batch: 1000  train loss: 6.23444269943  val loss: 4.64113378525
+=====>epoch: 38  batch: 1000  train loss: 6.23838668346  val loss: 5.11217546463
+=====>epoch: 39  batch: 1000  train loss: 6.23408031654  val loss: 4.83809089661
+=====>epoch: 40  batch: 1000  train loss: 6.23780745125  val loss: 4.90498256683
+train done.  cost 1341.03542812 mins
+
+==========>  predict train data  <==========
+===>question 你好啊你给我说说朗诵指导与作品精选那本书大概是说什么吧
+===>sel keyword 图书简介
+===>output <EOS> 
+
+===>question 哪些规格型号的产品承检机构是国家中文信息处理产品质量监督检验中心或者抽查结果是合格的
+===>sel keyword 规格型号
+===>output <EOS> 
+
+===>question 请问一下总共有多少个电容公司2017Q1大于50并且2017Q2大于50的？
+===>sel keyword 公司
+===>output <EOS> 
+
+===>question 你能把那些检测报告书号是SY-J201732359或者货号/款号为TT1500*1800-6x的样品名称告诉我吗
+===>sel keyword 样品名称
+===>output <EOS> 
+
+===>question 挪威产冰鲜三文鱼为什么检查不合格?
+===>sel keyword 不合格原因描述
+===>output <EOS> 
+
