@@ -1,0 +1,9 @@
+data/
+origin_data/
+train_data/
+val_data/
+test_data/
+nl2sql_baseline-master/data/
+log.log
+*.pyc
+*.swp
