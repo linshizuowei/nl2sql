@@ -242,7 +242,7 @@ class AttnDecoder(nn.Module):
         output, hidden = self.gru(output, hidden)
 #        output, hidden = self.gru(inputs, attn_applied)
         output = self.linear(output[0])
-#        output = self.softmax(output)
+        output = self.softmax(output)
 
         return output, hidden, attn_weights
 
@@ -316,31 +316,32 @@ def train(train_pairs, encoder, decoder, encoder_optimizer, decoder_optimizer, c
             decoder_output, decoder_hidden, decoder_attention = decoder(decoder_input, decoder_hidden, encoder_outputs, mask)
             decoder_outputs[i] = decoder_output
             decoder_input = target_tensor[i].unsqueeze(0)
-#            loss += criterion(decoder_output, target_index.transpose(0,1)[i])
+            loss += criterion(decoder_output, target_index.transpose(0,1)[i])
     else:
         for i in range(TAR_LEN):
             decoder_output, decoder_hidden, decoder_attention = decoder(decoder_input, decoder_hidden, encoder_outputs, mask)
             topv, topi = decoder_output.topk(1)
             decoder_outputs[i] = decoder_output
-            decoder_input = torch.tensor([word_vector[index2word[int(i)]] for i in topi.view(1,-1)[0]]).unsqueeze(0)
+            decoder_input = torch.tensor([word_vector[index2word[int(j)]] for j in topi.view(1,-1)[0]]).unsqueeze(0)
 #            if torch.equal(decoder_input[0,0], torch.tensor(word_vector[EOS_TOKEN])):
 #                break
 
 #    loss = masked_cross_entropy(decoder_outputs.transpose(0,1).contiguous(), target_index.contiguous(), target_len)
-    loss = criterion(decoder_outputs.view(-1, output_size), target_index.view(-1))
+#    loss = criterion(decoder_outputs.view(-1, output_size), target_index.view(-1))
     loss.backward()
     encoder_optimizer.step()
     decoder_optimizer.step()
     
-    return loss.item()
+    return loss.item() / target_tensor.size()[0]
 #    return loss.item()
 
-def trainIters(encoder, decoder, n_iters, print_every=1, lr=0.01):
+def trainIters(encoder, decoder, n_iters, print_every=1000, lr=0.01):
     print_loss = 0
+    start = time.time()
     encoder_optimizer = optim.SGD(encoder.parameters(), lr=lr, momentum=0.5)
     decoder_optimizer = optim.SGD(decoder.parameters(), lr=lr, momentum=0.5)
-#    criterion = nn.NLLLoss(ignore_index=word2index[TAB_TOKEN])
-    criterion = nn.CrossEntropyLoss(ignore_index=word2index[TAB_TOKEN])
+    criterion = nn.NLLLoss(ignore_index=word2index[TAB_TOKEN])
+#    criterion = nn.CrossEntropyLoss(ignore_index=word2index[TAB_TOKEN])
     for epoch in range(1, n_iters+1):
 #        if epoch % 5 == 0:
 #            for opt in [encoder_optimizer, decoder_optimizer]:
@@ -358,9 +359,10 @@ def trainIters(encoder, decoder, n_iters, print_every=1, lr=0.01):
                 print_loss = 0
                 if VAL:
                     val_loss = validate(encoder, decoder, criterion)
-                    print '=====>epoch:', epoch, ' batch:', i, ' train loss:',print_loss_avg, ' val loss:', val_loss.item()
+                    print '=====>epoch:', epoch, ' batch:', i, ' train loss:',print_loss_avg, ' val loss:', val_loss.item(), ' cost: %.2fs'% (time.time() - start)
                 else:
-                    print '=====>epoch:', epoch, 'batch:', i, 'loss:',print_loss_avg
+                    print '=====>epoch:', epoch, 'batch:', i, 'loss:',print_loss_avg, ' cost: %.2fs'% (time.time()-start)
+                start = time.time()
 
 
 def validate(encoder, decoder, criterion):
@@ -389,11 +391,12 @@ def validate(encoder, decoder, criterion):
         decoder_output, decoder_hidden, decoder_attention = decoder(decoder_input, decoder_hidden, encoder_outputs, mask)
         topv, topi = decoder_output.topk(1)
         decoder_outputs[i] = decoder_output
-        decoder_input = torch.tensor([word_vector[index2word[int(i)]] for i in topi.view(1,-1)[0]]).unsqueeze(0)
+        decoder_input = torch.tensor([word_vector[index2word[int(j)]] for j in topi.view(1,-1)[0]]).unsqueeze(0)
+        loss += criterion(decoder_output, target_index.transpose(0,1)[i])
 
 #    loss = masked_cross_entropy(decoder_outputs.transpose(0,1).contiguous(), target_index.contiguous(), target_len)
-    loss = criterion(decoder_outputs.view(-1, output_size), target_index.view(-1))
-    return loss
+#    loss = criterion(decoder_outputs.view(-1, output_size), target_index.view(-1))
+    return loss / target_tensor.size()[0]
 
 
 def tensorFromVec(vector):
@@ -526,10 +529,10 @@ start = time.time()
 hidden_size = 256
 input_size = 300
 output_size = len(word2index)
-batch_size = 5
+batch_size = 1
 encoder = Encoder(input_size, hidden_size).to(device)
 decoder = AttnDecoder(input_size, hidden_size, output_size).to(device)
 print '=====> train start'
-trainIters(encoder, decoder, 2)
+trainIters(encoder, decoder, 1)
 print 'train done.  cost', (time.time()-start)/60.0, 'mins\n'
 random_evaluate(encoder, decoder)
