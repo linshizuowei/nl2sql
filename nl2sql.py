@@ -156,6 +156,8 @@ def prepare_data(dtype, etype):
             in_str = construct_input_str(data)
             out_str = construct_output_str(data, etype)
             pairs.append([in_str, out_str])
+    if dtype == 'train':
+        random.shuffle(pairs)
     return pairs
 
 def prepare_val_data(etype):
@@ -310,47 +312,47 @@ def train(train_pairs, encoder, decoder, encoder_optimizer, decoder_optimizer, c
 
     decoder_input = torch.tensor([[word_vector[SOS_TOKEN]] for _ in range(batch_size)], device=device).transpose(0, 1)
     decoder_hidden = encoder_hidden
-    use_tf = True #if random.random() < teacher_forcing_ratio else False
+    use_tf = True if random.random() < teacher_forcing_ratio else False
     if use_tf:
         for i in range(TAR_LEN):
             decoder_output, decoder_hidden, decoder_attention = decoder(decoder_input, decoder_hidden, encoder_outputs, mask)
             decoder_outputs[i] = decoder_output
             decoder_input = target_tensor[i].unsqueeze(0)
-            loss += criterion(decoder_output, target_index.transpose(0,1)[i])
+#            loss += criterion(decoder_output, target_index.transpose(0,1)[i])
     else:
         for i in range(TAR_LEN):
             decoder_output, decoder_hidden, decoder_attention = decoder(decoder_input, decoder_hidden, encoder_outputs, mask)
             topv, topi = decoder_output.topk(1)
             decoder_outputs[i] = decoder_output
             decoder_input = torch.tensor([word_vector[index2word[int(j)]] for j in topi.view(1,-1)[0]]).unsqueeze(0)
-#            if torch.equal(decoder_input[0,0], torch.tensor(word_vector[EOS_TOKEN])):
-#                break
+#            loss += criterion(decoder_output, target_index.transpose(0,1)[i])
 
 #    loss = masked_cross_entropy(decoder_outputs.transpose(0,1).contiguous(), target_index.contiguous(), target_len)
-#    loss = criterion(decoder_outputs.view(-1, output_size), target_index.view(-1))
+    loss = criterion(decoder_outputs.view(-1, output_size), target_index.transpose(0, 1).contiguous().view(-1))
     loss.backward()
     encoder_optimizer.step()
     decoder_optimizer.step()
     
-    return loss.item() / target_tensor.size()[0]
-#    return loss.item()
+#    return loss.item() / sum(target_len)
+    return loss.item()
 
-def trainIters(encoder, decoder, n_iters, print_every=1000, lr=0.01):
+def trainIters(encoder, decoder, n_iters, print_every=1000, lr=0.1):
     print_loss = 0
     start = time.time()
     encoder_optimizer = optim.SGD(encoder.parameters(), lr=lr, momentum=0.5)
     decoder_optimizer = optim.SGD(decoder.parameters(), lr=lr, momentum=0.5)
     criterion = nn.NLLLoss(ignore_index=word2index[TAB_TOKEN])
 #    criterion = nn.CrossEntropyLoss(ignore_index=word2index[TAB_TOKEN])
+
     for epoch in range(1, n_iters+1):
-#        if epoch % 5 == 0:
-#            for opt in [encoder_optimizer, decoder_optimizer]:
-#                for pg in opt.param_groups:
-#                    pg['lr'] = pg['lr'] * 0.8
-#        print '=====>epoch:', epoch, ' lr', encoder_optimizer.param_groups[0]['lr']
-#        for i in range(1, total_num/batch_size+1):
-        for i in range(5):
-            train_pairs = sorted([random.choice(pairs) for _ in range(batch_size)], key=lambda x: len(x[0]), reverse=True)
+        if epoch % 5 == 0:
+            for opt in [encoder_optimizer, decoder_optimizer]:
+                for pg in opt.param_groups:
+                    pg['lr'] = pg['lr'] * 0.1
+        print '=====>epoch:', epoch, ' lr', encoder_optimizer.param_groups[0]['lr']
+        for i in range(1, total_num/batch_size+1):
+#        for i in range(10):
+            train_pairs = sorted(pairs[(i-1)*batch_size: i*batch_size], key=lambda x: len(x[0]), reverse=True)
             loss = train(train_pairs, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion)
             print_loss += loss
 
@@ -359,14 +361,15 @@ def trainIters(encoder, decoder, n_iters, print_every=1000, lr=0.01):
                 print_loss = 0
                 if VAL:
                     val_loss = validate(encoder, decoder, criterion)
-                    print '=====>epoch:', epoch, ' batch:', i, ' train loss:',print_loss_avg, ' val loss:', val_loss.item(), ' cost: %.2fs'% (time.time() - start)
+                    print '=====>epoch:', epoch, ' batch:', i, ' train loss:',print_loss_avg, ' val loss:', val_loss, ' cost: %.2fs'% (time.time() - start)
                 else:
-                    print '=====>epoch:', epoch, 'batch:', i, 'loss:',print_loss_avg, ' cost: %.2fs'% (time.time()-start)
+                    print '=====>epoch:', epoch, ' batch:', i, ' loss:',print_loss_avg, ' cost: %.2fs'% (time.time()-start)
                 start = time.time()
 
 
 def validate(encoder, decoder, criterion):
-    valpairs = sorted([random.choice(val_pairs) for _ in range(128)], key=lambda x: len(x[0]), reverse=True)
+    vbatch_size = 128
+    valpairs = sorted([random.choice(val_pairs) for _ in range(vbatch_size)], key=lambda x: len(x[0]), reverse=True)
     in_pair = [construct_input_vector(pair[0]) for pair in valpairs]
     input_tensor = tensorFromVec([pair[0] for pair in in_pair])
     input_length = torch.tensor([pair[1] for pair in in_pair])
@@ -377,26 +380,31 @@ def validate(encoder, decoder, criterion):
     mask = create_mask(input_tensor)
 
     encoder_hidden = torch.zeros(1, input_tensor.shape[1], hidden_size, device=device)
-    encoder_outputs = torch.zeros(MAX_LEN, input_tensor.shape[1], encoder.hidden_size, device=device)
-    decoder_outputs = torch.zeros(TAR_LEN, target_tensor.shape[1], output_size, device=device)
+    encoder_outputs = torch.zeros(MAX_LEN, vbatch_size, encoder.hidden_size, device=device)
+    decoder_outputs = torch.zeros(TAR_LEN, vbatch_size, output_size, device=device)
     loss = 0
 
     encoder_output, encoder_hidden = encoder(input_tensor, input_length, encoder_hidden)
     for i in range(encoder_output.size()[0]):
         encoder_outputs[i] = encoder_output[i]
 
-    decoder_input = torch.tensor([[word_vector[SOS_TOKEN]] for _ in range(target_tensor.shape[1])], device=device).transpose(0, 1)
+    decoder_input = torch.tensor([[word_vector[SOS_TOKEN]] for _ in range(vbatch_size)], device=device).transpose(0, 1)
     decoder_hidden = encoder_hidden
-    for i in range(TAR_LEN):
-        decoder_output, decoder_hidden, decoder_attention = decoder(decoder_input, decoder_hidden, encoder_outputs, mask)
-        topv, topi = decoder_output.topk(1)
-        decoder_outputs[i] = decoder_output
-        decoder_input = torch.tensor([word_vector[index2word[int(j)]] for j in topi.view(1,-1)[0]]).unsqueeze(0)
-        loss += criterion(decoder_output, target_index.transpose(0,1)[i])
+    use_tf = True if random.random() < teacher_forcing_ratio else False
+    if use_tf:
+        for i in range(TAR_LEN):
+            decoder_output, decoder_hidden, decoder_attention = decoder(decoder_input, decoder_hidden, encoder_outputs, mask)
+            decoder_outputs[i] = decoder_output
+            decoder_input = target_tensor[i].unsqueeze(0)
+    else:
+        for i in range(TAR_LEN):
+            decoder_output, decoder_hidden, decoder_attention = decoder(decoder_input, decoder_hidden, encoder_outputs, mask)
+            decoder_outputs[i] = decoder_output
+            topv, topi = decoder_output.topk(1)
+            decoder_input = torch.tensor([word_vector[index2word[int(j)]] for j in topi.view(1,-1)[0]]).unsqueeze(0)
 
-#    loss = masked_cross_entropy(decoder_outputs.transpose(0,1).contiguous(), target_index.contiguous(), target_len)
-#    loss = criterion(decoder_outputs.view(-1, output_size), target_index.view(-1))
-    return loss / target_tensor.size()[0]
+    loss = criterion(decoder_outputs.view(-1, output_size), target_index.transpose(0, 1).contiguous().view(-1))
+    return loss.item()
 
 
 def tensorFromVec(vector):
@@ -417,7 +425,6 @@ def evaluate(encoder, decoder, data):
         invec_len = in_tensor.size()[0]
         encoder_hidden = torch.zeros(1, 1, hidden_size, device=device)
         encoder_outputs = torch.zeros(MAX_LEN, 1, encoder.hidden_size, device=device)
-        decoder_outputs = torch.zeros(TAR_LEN, 1, output_size, device=device)
 
         encoder_output, encoder_hidden = encoder(in_tensor, input_len, encoder_hidden)
 
@@ -529,10 +536,10 @@ start = time.time()
 hidden_size = 256
 input_size = 300
 output_size = len(word2index)
-batch_size = 1
+batch_size = 5
 encoder = Encoder(input_size, hidden_size).to(device)
 decoder = AttnDecoder(input_size, hidden_size, output_size).to(device)
-print '=====> train start'
-trainIters(encoder, decoder, 1)
-print 'train done.  cost', (time.time()-start)/60.0, 'mins\n'
+print '=====>start train'
+trainIters(encoder, decoder, 10)
+print '=====>end train.  cost %.2fmins\n'%((time.time()-start)/60.0)
 random_evaluate(encoder, decoder)
